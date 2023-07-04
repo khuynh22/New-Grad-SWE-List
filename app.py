@@ -12,9 +12,9 @@ def add_item():
     # flash('Item added')
     return redirect('/')
 
-@app.route('/edit/<int:item:id', methods=['GET', 'POST'])
+@app.route('/edit/<int:item_id>', methods=['GET', 'POST'])
 def edit_item(item_id):
-    items = items[item_id]
+    item = items[item_id - 1]
 
     if request.method == 'POST':
         new_item = request.form['item']
