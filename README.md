@@ -12,6 +12,8 @@ To run the project, install **flask** framework, **SendGrid API** and **env** us
 
 Set up SendGrid API using https://app.sendgrid.com/guide link, make sure to set up an account for it and follow the instruction from this website.
 
+When finishing the above steps, run `flask run` in the terminal and head to the link provided in your terminal to go to the project. Make sure to re-run it for any changes in code.
+
 ### Technology
 
 The project used Flask as the main framework. Flask is a micro web framework written in Python. The front-end is programmed in HTML and CSS.
