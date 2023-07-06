@@ -1,3 +1,4 @@
+<!-- checklist.html -->
 <!DOCTYPE html>
 <html>
   <head>
@@ -11,12 +12,18 @@
   <body>
     <div class="container">
       <h1>Hack Planner</h1>
-      <ul>
+      <ul class="checklist-items">
         {% for item in items %}
         <li>
-          {{ item }}
-          <a href="/edit/{{loop.index}}">Edit</a>
-          <a href="/delete/{{loop.index}}">Delete</a>
+          <span>{{ item[1] }}</span>
+          <a href="/edit/{{ item[0] }}">Edit</a>
+          <a href="/delete/{{ item[0] }}">Delete</a>
+          <button
+            class="remind-button"
+            onclick="sendReminderEmail('{{ item[1] }}')"
+          >
+            Remind
+          </button>
         </li>
         {% endfor %}
       </ul>
@@ -25,5 +32,42 @@
         <button type="submit">Add</button>
       </form>
     </div>
+
+    <script>
+      function sendReminderEmail(item) {
+        fetch("/send_email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            item: item,
+          }),
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Reminder email sent successfully!");
+            } else {
+              console.error("Failed to send reminder email.");
+            }
+          })
+          .catch((error) => {
+            console.error(
+              "Error occurred while sending reminder email:",
+              error
+            );
+          });
+      }
+
+      function setReminder(item) {
+        setTimeout(function () {
+          var reminder = confirm("Reminder: " + item);
+          if (reminder) {
+            sendReminderEmail(item);
+          }
+        }, 5 * 1000); // 5 seconds
+        sendReminderEmail(item);
+      }
+    </script>
   </body>
 </html>
