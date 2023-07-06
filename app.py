@@ -1,16 +1,20 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, jsonify
 import sqlite3
 import os
+import sendgrid
+from sendgrid.helpers.mail import Mail
+
 app = Flask(__name__)
-items = []
 db_path = 'checklist.db'
+sendgrid_api_key = os.getenv('SENDGRID_API_KEY')
+reminder_email = os.getenv('REMINDER_EMAIL')
 
 
 def create_table():
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS checklist
-                (id INTEGER PRIMARY KEY AUTOINCREMENT, item TEXT)''')
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, item TEXT)''')
     conn.commit()
     conn.close()
 
@@ -18,7 +22,7 @@ def create_table():
 def get_items():
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    c.execute('SELECT * FROM checklist')
+    c.execute("SELECT * FROM checklist")
     items = c.fetchall()
     conn.close()
     return items
@@ -35,7 +39,7 @@ def add_item(item):
 def update_item(item_id, new_item):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    c.execute('UPDATE checklist SET item = ? WHERE id = ?', (new_item, item_id))
+    c.execute("UPDATE checklist SET item = ? WHERE id = ?", (new_item, item_id))
     conn.commit()
     conn.close()
 
@@ -43,9 +47,27 @@ def update_item(item_id, new_item):
 def delete_item(item_id):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    c.execute('DELETE FROM checklist WHERE id = ?', (item_id,))
+    c.execute("DELETE FROM checklist WHERE id = ?", (item_id,))
     conn.commit()
     conn.close()
+
+
+def send_email(subject, body):
+    message = Mail(
+        from_email=reminder_email,
+        to_emails='timhuynhwork@gmail.com',
+        subject=subject,
+        plain_text_content=body)
+
+    try:
+        sg = sendgrid.SendGridAPIClient(api_key=sendgrid_api_key)
+        response = sg.send(message)
+        if response.status_code == 202:
+            return True
+    except Exception as e:
+        print("An error occurred while sending email:", str(e))
+
+    return False
 
 
 @app.route('/')
@@ -59,7 +81,6 @@ def checklist():
 def add():
     item = request.form['item']
     add_item(item)
-    # flash('Item added')
     return redirect('/')
 
 
@@ -79,3 +100,20 @@ def edit(item_id):
 def delete(item_id):
     delete_item(item_id)
     return redirect('/')
+
+
+@app.route('/send_email', methods=['POST'])
+def send_email_route():
+    data = request.get_json()
+    item = data['item']
+    subject = "Reminder: {}".format(item)
+    body = "This is a reminder for the task: {}".format(item)
+
+    if send_email(subject, body):
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
